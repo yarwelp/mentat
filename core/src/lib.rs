@@ -681,6 +681,8 @@ pub struct Schema {
 }
 
 pub trait HasSchema {
+    fn entid_for_type(&self, t: ValueType) -> Option<KnownEntid>;
+
     fn get_ident<T>(&self, x: T) -> Option<&NamespacedKeyword> where T: Into<Entid>;
     fn get_entid(&self, x: &NamespacedKeyword) -> Option<KnownEntid>;
     fn attribute_for_entid<T>(&self, x: T) -> Option<&Attribute> where T: Into<Entid>;
@@ -708,6 +710,11 @@ impl Schema {
 }
 
 impl HasSchema for Schema {
+    fn entid_for_type(&self, t: ValueType) -> Option<KnownEntid> {
+        // TODO: this can be made more efficient.
+        self.get_entid(&t.into_keyword())
+    }
+
     fn get_ident<T>(&self, x: T) -> Option<&NamespacedKeyword> where T: Into<Entid> {
         self.entid_map.get(&x.into())
     }
