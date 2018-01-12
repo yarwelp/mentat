@@ -111,6 +111,24 @@ pub trait Queryable {
         where E: Into<Entid>;
 }
 
+#[derive(Eq, PartialEq, Debug, Clone, Copy)]
+pub enum DropBehavior {
+    /// Panic. This is the default.
+    Panic,
+
+    /// Roll back the changes.
+    Rollback,
+
+    /// Commit the changes.
+    Commit,
+}
+
+impl Default for DropBehavior {
+    fn default() -> DropBehavior {
+        DropBehavior::Panic
+    }
+}
+
 /// Represents an in-progress, not yet committed, set of changes to the store.
 /// Call `commit` to commit your changes, or `rollback` to discard them.
 /// A transaction is held open until you do so.
@@ -121,6 +139,16 @@ pub struct InProgress<'a, 'c> {
     generation: u64,
     partition_map: PartitionMap,
     schema: Schema,
+}
+
+impl<'a, 'c> InProgress<'a, 'c> {
+    pub fn set_drop_behavior(&mut self, behavior: DropBehavior) {
+        match behavior {
+            DropBehavior::Rollback => self.transaction.set_drop_behavior(rusqlite::DropBehavior::Rollback),
+            DropBehavior::Commit => self.transaction.set_drop_behavior(rusqlite::DropBehavior::Commit),
+            DropBehavior::Panic => (),                // TODO
+        }
+    }
 }
 
 pub struct QueryableTransaction<'a, 'c>(InProgress<'a, 'c>);
